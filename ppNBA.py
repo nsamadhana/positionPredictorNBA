@@ -4,8 +4,8 @@ import sys
 import statistics as stat
 
 
-def standardize(h,mean,std):
-    return (abs(h-mean))/std 
+def standardize(x,mean,std):
+    return (abs(x-mean))/std 
 
 def findDistance(p1,p2):
     return math.sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2 )
@@ -17,14 +17,25 @@ def percentError(expected, actual):
             errors += 1 
     return((errors,errors/len(actual)))
 
-def predict(trainData,testData,flag):
+def predict(trainData, testData, hMean, hSTD, wMean, wSTD, flag):
     output = [] 
     train = [] 
     test = [] 
-    for each in trainData: 
-        train.append((int(each["Height"]), int(each["Weight"]), each["Position"]))
+    for each in trainData:
+        if flag:  
+            train.append((int(each["Height"]), int(each["Weight"]), each["Position"]))
+        else: 
+            h = standardize(int(each["Height"]), hMean, hSTD)
+            w = standardize(int(each["Weight"]), wMean, wSTD)
+            train.append((h, w, each["Position"]))
     for each in testData: 
-        test.append((int(each["Height"]), int(each["Weight"])))
+        if flag:
+            test.append((int(each["Height"]), int(each["Weight"])))
+        else: 
+            h = standardize(int(each["Height"]), hMean, hSTD)
+            w = standardize(int(each["Weight"]), wMean, wSTD)
+            test.append((h, w))
+
     for i in test: 
         min = sys.maxsize 
         p1 = i 
@@ -47,12 +58,15 @@ with open("train.csv", newline = "") as trainFile:
         trainingData.append(row)
         heights.append(int(row["Height"]))
         weights.append(int(row["Weight"]))
-    hMean = stat.mean(heights)
-    hSTD = stat.stdev(heights)
-    wMean = stat.mean(weights)
-    wSTD = stat.stdev(weights)
+hMean = stat.mean(heights)
+hSTD = stat.stdev(heights)
+wMean = stat.mean(weights)
+wSTD = stat.stdev(weights)
+print(hMean,hSTD,wMean,wSTD)
+print("test for height: ", standardize(73,hMean,hSTD))
+print("test for weight: ", standardize(180,wMean,wSTD))
 
-expected = [] 
+
 actual = [] 
 testingData = []
 with open("test.csv", newline = "") as testFile: 
@@ -62,5 +76,9 @@ with open("test.csv", newline = "") as testFile:
         testingData.append(row)
 
 #Non standardized result
-expected = predict(trainingData,testingData, True)
-print("Percent error: ", percentError(expected, actual))
+notStandardized = predict(trainingData,testingData, hMean, hSTD, wMean, wSTD, True)
+print("Non-standardized: ", percentError(notStandardized, actual))
+
+#Standardized result
+standardized = predict(trainingData,testingData, hMean, hSTD, wMean, wSTD, False)
+print("Standardized: ", percentError(standardized, actual))
