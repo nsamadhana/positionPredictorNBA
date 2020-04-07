@@ -3,6 +3,7 @@ import csv
 import sys 
 import statistics as stat
 
+#Defaults to 1 nearest neihbor
 
 def standardize(x,mean,std):
     return (abs(x-mean))/std 
@@ -18,20 +19,18 @@ def percentError(expected, actual):
     return((errors,errors/len(actual)))
 
 def predict(trainData, testData, hMean, hSTD, wMean, wSTD, flag):
-    output = [] 
-    train = [] 
-    test = [] 
-    for each in trainData:
-        if flag:  
+    output, train, test = ([] for i in range(3))
+    if flag: #Don't standardize 
+        for each in trainData: 
             train.append((int(each["Height"]), int(each["Weight"]), each["Position"]))
-        else: 
+        for each in testData:
+            test.append((int(each["Height"]), int(each["Weight"])))
+    else: #Standardize
+        for each in trainData: 
             h = standardize(int(each["Height"]), hMean, hSTD)
             w = standardize(int(each["Weight"]), wMean, wSTD)
             train.append((h, w, each["Position"]))
-    for each in testData: 
-        if flag:
-            test.append((int(each["Height"]), int(each["Weight"])))
-        else: 
+        for each in testData: 
             h = standardize(int(each["Height"]), hMean, hSTD)
             w = standardize(int(each["Weight"]), wMean, wSTD)
             test.append((h, w))
@@ -49,9 +48,7 @@ def predict(trainData, testData, hMean, hSTD, wMean, wSTD, flag):
     return output
 
 
-trainingData = [] #training data 
-heights = [] 
-weights = []
+trainingData, heights, weights = ([] for i in range(3))
 with open("train.csv", newline = "") as trainFile:
     reader = csv.DictReader(trainFile)
     for row in reader:
@@ -62,13 +59,9 @@ hMean = stat.mean(heights)
 hSTD = stat.stdev(heights)
 wMean = stat.mean(weights)
 wSTD = stat.stdev(weights)
-print(hMean,hSTD,wMean,wSTD)
-print("test for height: ", standardize(73,hMean,hSTD))
-print("test for weight: ", standardize(180,wMean,wSTD))
 
 
-actual = [] 
-testingData = []
+actual, testingData = ([] for i in range(2))
 with open("test.csv", newline = "") as testFile: 
     reader = csv.DictReader(testFile)
     for row in reader:
